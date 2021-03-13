@@ -15,63 +15,56 @@ import WebGL
 -- MAIN
 
 
+import Browser
+import Html exposing (..)
+import Html.Attributes as Attrs exposing (..)
+import Html.Events exposing (onInput)
+
+
+main : Program () Model Msg
 main =
-  Browser.element
-    { init = init
-    , view = view
-    , update = update
-    , subscriptions = subscriptions
-    }
-
-
-
--- MODEL
-
-
+    Browser.sandbox
+        { view = view
+        , update = update
+        , init = 0
+        }
 type alias Model =
-  Float
+    Int
 
-
-init : () -> (Model, Cmd Msg)
-init () =
-  ( 0, Cmd.none )
-
-
-
--- UPDATE
-
+type alias Modelf = Float
 
 type Msg
-  = TimeDelta Float
+    = Update String
 
 
-update : Msg -> Model -> (Model, Cmd Msg)
-update msg currentTime =
-  case msg of
-    TimeDelta delta ->
-      ( delta + currentTime, Cmd.none )
+update : Msg -> Model -> Model
+update (Update v) model =
+    String.toInt v |> Maybe.withDefault 0
 
+view : Int -> Html Msg
+view model =
+    div []
+        [ 
+            h1 [][
+                text "Invert Binary Tree"
+            ],
+            input
+            [ type_ "range"
+            , Attrs.min "0  "
+            , Attrs.max "2000"
+            , value <| String.fromInt model
+            , onInput Update
+            ]
+            [],
+            triangleRender (toFloat model)
+        ]
 
-
--- SUBSCRIPTIONS
-
-
-subscriptions : Model -> Sub Msg
-subscriptions _ =
-  E.onAnimationFrameDelta TimeDelta
-
-
-
--- VIEW
-
-
-view : Model -> Html msg
-view t =
-  WebGL.toHtml
+triangleRender t = WebGL.toHtml
     [ width 400, height 400, style "display" "block"
     ]
-    [ WebGL.entity vertexShader fragmentShader mesh { perspective = perspective (t / 1000) }
+    [ WebGL.entity vertexShader fragmentShader mesh { perspective = perspective ((t-1000) / 1000) }
     ]
+
 
 
 perspective : Float -> Mat4
@@ -79,10 +72,6 @@ perspective t =
   Mat4.mul
     (Mat4.makePerspective 45 1 0.01 100)
     (Mat4.makeLookAt (vec3 (4 * cos t) 0 (4 * sin t)) (vec3 0 0 0) (vec3 0 1 0))
-
-
-
--- MESH
 
 
 type alias Vertex =
@@ -101,14 +90,9 @@ mesh =
     ]
 
 
-
--- SHADERS
-
-
 type alias Uniforms =
   { perspective : Mat4
   }
-
 
 vertexShader : WebGL.Shader Vertex Uniforms { vcolor : Vec3 }
 vertexShader =
